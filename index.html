@@ -169,8 +169,27 @@
 
 <script>
 /* ================= STORAGE ================= */
-async function dbGet(key, shared){ try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }catch(e){ return null; } }
-async function dbSet(key, val, shared){ try{ await window.storage.set(key, JSON.stringify(val), shared); }catch(e){ console.error('storage set failed', e); } }
+/* Dùng window.storage khi chạy trong Claude.ai (dữ liệu dùng chung nhiều người).
+   Khi chạy độc lập (GitHub Pages, mở file .html trực tiếp...), window.storage
+   không tồn tại nên tự chuyển sang localStorage của trình duyệt. */
+const HAS_CLAUDE_STORAGE = (typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+async function dbGet(key, shared){
+  if(HAS_CLAUDE_STORAGE){
+    try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }
+    catch(e){ return null; }
+  }
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+  catch(e){ return null; }
+}
+async function dbSet(key, val, shared){
+  if(HAS_CLAUDE_STORAGE){
+    try{ await window.storage.set(key, JSON.stringify(val), shared); return; }
+    catch(e){ console.error('storage set failed', e); }
+  }
+  try{ localStorage.setItem(key, JSON.stringify(val)); }
+  catch(e){ console.error('localStorage set failed', e); }
+}
 
 /* ================= STATE ================= */
 let state = {
