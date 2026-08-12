@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản lý thiết bị · CSVC Trường học</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sidebar:#12172B;
+    --sidebar-hover:rgba(255,255,255,.06);
+    --sidebar-active:rgba(59,91,253,.18);
+    --sidebar-text:#AEB4CC;
+    --sidebar-text-active:#FFFFFF;
+    --bg:#F4F5FA;
+    --card:#FFFFFF;
+    --line:#E7E9F2;
+    --ink:#171B2E;
+    --ink-soft:#6C7189;
+    --accent:#3B5BFD;
+    --accent-hover:#2E49DB;
+    --ok:#1C8A4B; --ok-bg:#E4F7EC;
+    --warn:#B5790C; --warn-bg:#FDF2DC;
+    --bad:#D0362B; --bad-bg:#FCE8E6;
+    --disp:'Baloo 2', sans-serif;
+    --body:'Inter', sans-serif;
+    --mono:'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;}
+  h1,h2,h3{font-family:var(--disp);margin:0;}
+  a{color:inherit;}
+  #shell{display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  #sidebar{width:250px;flex-shrink:0;background:var(--sidebar);color:var(--sidebar-text);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh;}
+  .logo{display:flex;align-items:center;gap:10px;padding:6px 10px 22px;}
+  .logo .mark{width:34px;height:34px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .logo .mark svg{width:19px;height:19px;}
+  .logo h1{font-size:16.5px;color:#fff;font-weight:700;}
+  .navlist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:2px;}
+  .navlist button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;color:var(--sidebar-text);font-family:var(--body);font-weight:600;font-size:13.6px;padding:10px 12px;border-radius:9px;cursor:pointer;}
+  .navlist button svg{width:17px;height:17px;flex-shrink:0;opacity:.85;}
+  .navlist button:hover{background:var(--sidebar-hover);color:#fff;}
+  .navlist button.active{background:var(--sidebar-active);color:var(--sidebar-text-active);}
+  .navlist button.active svg{opacity:1;}
+  .sidebar-foot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);}
+  .who{display:flex;align-items:center;gap:9px;padding:8px 10px;}
+  .who .av{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;}
+  .who div p{margin:0;}
+  .who .name{color:#fff;font-weight:600;font-size:12.6px;}
+  .who .role{font-size:11px;color:var(--sidebar-text);}
+  .link-btn{background:none;border:none;color:var(--sidebar-text);font-size:12px;font-weight:600;cursor:pointer;padding:8px 10px;width:100%;text-align:left;border-radius:8px;}
+  .link-btn:hover{background:var(--sidebar-hover);color:#fff;}
+  .guest-login-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:10px;font-weight:700;font-family:var(--body);font-size:13px;cursor:pointer;}
+
+  /* MAIN */
+  #main{flex:1;padding:28px 34px 60px;max-width:1300px;}
+  .pagehead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  .pagehead h2{font-size:27px;}
+  .pagehead .sub{color:var(--ink-soft);margin:4px 0 0;font-size:13.5px;}
+  .headactions{display:flex;gap:10px;flex-shrink:0;}
+
+  .btn{font-family:var(--body);font-weight:700;font-size:13px;padding:9px 16px;border-radius:9px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;}
+  .btn:hover{background:var(--accent-hover);}
+  .btn.secondary{background:#fff;color:var(--ink);border-color:var(--line);}
+  .btn.secondary:hover{background:#F7F8FC;}
+  .btn.danger{background:var(--bad);border-color:var(--bad);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn.sm{padding:6px 12px;font-size:12px;}
+
+  /* STAT CARDS */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px;}
+  .stat-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+  .stat-card.alert{background:var(--bad-bg);border-color:#F5C6C1;}
+  .stat-card .label{font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .stat-card .num{font-family:var(--disp);font-size:32px;font-weight:700;margin-top:6px;}
+  .stat-card.alert .num{color:var(--bad);}
+
+  .panels{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;}
+  @media(max-width:900px){.panels{grid-template-columns:1fr;}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .panel-head h3{font-size:16px;}
+  .panel-head a{font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer;}
+  .row-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .row-item:last-child{border-bottom:none;}
+  .row-item .av{width:36px;height:36px;border-radius:9px;background:#EDEFFB;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .row-item .info{flex:1;min-width:0;}
+  .row-item .info .n{font-weight:600;font-size:13.6px;}
+  .row-item .info .m{font-size:11.6px;color:var(--ink-soft);font-family:var(--mono);}
+  .report-mini .dot{width:8px;height:8px;border-radius:50%;background:var(--bad);flex-shrink:0;margin-top:5px;}
+  .report-mini .n{font-weight:700;font-size:13px;}
+  .report-mini .d{font-size:12.5px;color:var(--ink-soft);}
+  .empty-mini{color:var(--ink-soft);font-size:13px;padding:10px 0;}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  .toolbar input[type=text], .toolbar select{font-family:var(--body);font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink);}
+  .toolbar input[type=text]{flex:1;min-width:180px;}
+
+  /* TABLE / GRID */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+  .tcard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px;cursor:pointer;}
+  .tcard:hover{border-color:#C9D0FA;}
+  .tcard-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .tag-id{font-family:var(--mono);font-size:11px;color:var(--ink-soft);}
+  .pill{font-family:var(--body);font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+  .pill.active{background:var(--ok-bg);color:var(--ok);}
+  .pill.broken{background:var(--bad-bg);color:var(--bad);}
+  .pill.repair{background:var(--warn-bg);color:var(--warn);}
+  .tcard h3{font-size:15.5px;margin:10px 0 3px;font-weight:700;font-family:var(--body);}
+  .tcard .loc{font-size:12.5px;color:var(--ink-soft);margin:0;}
+  .tcard-foot{display:flex;justify-content:space-between;align-items:center;margin-top:13px;padding-top:10px;border-top:1px dashed var(--line);}
+  .tcard-foot .cat{font-size:11px;font-family:var(--mono);color:var(--ink-soft);}
+  .mini-qr{width:32px;height:32px;background:#fff;border:1px solid var(--line);border-radius:5px;overflow:hidden;}
+  .mini-qr img,.mini-qr canvas{width:100%!important;height:100%!important;}
+  .check-badge{position:absolute;top:14px;right:14px;}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+  .empty h3{color:var(--ink);margin-bottom:6px;}
+
+  /* MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(17,21,40,.5);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+  .modal{background:var(--card);border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;padding:26px;position:relative;}
+  .modal h2{font-size:20px;margin:0 0 3px;}
+  .modal .sub{font-size:12.2px;color:var(--ink-soft);font-family:var(--mono);margin:0 0 18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;margin-bottom:5px;color:var(--ink-soft);}
+  .field input[type=text],.field input[type=password],.field input[type=date],.field select,.field textarea{width:100%;font-family:var(--body);font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);}
+  .field textarea{resize:vertical;min-height:70px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+  .close-x{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-soft);width:28px;height:28px;}
+  .err-msg{background:var(--bad-bg);color:var(--bad);font-size:12.5px;padding:9px 12px;border-radius:8px;margin-bottom:14px;}
+  .hint{background:var(--warn-bg);border:1px solid #F0DBA6;color:#7A5A16;font-size:12.3px;padding:10px 14px;border-radius:9px;margin-bottom:16px;line-height:1.5;}
+
+  .detail-qr-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px;background:var(--bg);border-radius:12px;margin-bottom:16px;}
+  .detail-qr-wrap .qr-box{background:#fff;padding:10px;border-radius:9px;border:1px solid var(--line);}
+  .detail-qr-wrap .link{font-family:var(--mono);font-size:10.6px;color:var(--ink-soft);word-break:break-all;text-align:center;}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:13.5px;margin-bottom:16px;}
+  .kv dt{color:var(--ink-soft);font-weight:600;}
+  .kv dd{margin:0;}
+  .report-item{border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-bottom:8px;font-size:13px;}
+  .report-item .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);margin-bottom:4px;}
+  .report-item img{max-width:100%;border-radius:8px;margin-top:6px;}
+  .badge-new{background:var(--bad-bg);color:var(--bad);font-family:var(--mono);font-size:10px;padding:1.5px 8px;border-radius:20px;font-weight:700;}
+  .badge-processing{background:var(--warn-bg);color:var(--warn);font-family:var(--mono);font-size:10px;padding:1.5px 8px;border-radius:20px;font-weight:700;}
+  .badge-done{background:var(--ok-bg);color:var(--ok);font-family:var(--mono);font-size:10px;padding:1.5px 8px;border-radius:20px;font-weight:700;}
+  .file-drop{border:1px dashed var(--line);border-radius:9px;padding:14px;text-align:center;font-size:12.5px;color:var(--ink-soft);cursor:pointer;background:var(--bg);}
+  .file-drop img{max-width:100%;max-height:120px;border-radius:8px;margin-top:8px;}
+  .catchip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);padding:5px 12px;border-radius:20px;font-size:12.5px;font-weight:600;margin:0 6px 6px 0;}
+  .catchip button{background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700;font-size:13px;}
+
+  /* Kiểm kê */
+  .kk-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--card);}
+  .kk-row.checked{background:var(--ok-bg);border-color:#BFE6CE;}
+  .kk-row .cbwrap{flex-shrink:0;}
+  .kk-row .info{flex:1;min-width:0;}
+  .kk-row .info .n{font-weight:700;font-size:13.6px;}
+  .kk-row .info .m{font-size:11.6px;color:var(--ink-soft);font-family:var(--mono);}
+  .kk-row .stamp{font-size:11px;color:var(--ink-soft);font-family:var(--mono);flex-shrink:0;}
+  input[type=checkbox]{width:19px;height:19px;accent-color:var(--accent);cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ================= STORAGE ================= */
+async function dbGet(key, shared){ try{ const r = await window.storage.get(key, shared); return r ? JSON.parse(r.value) : null; }catch(e){ return null; } }
+async function dbSet(key, val, shared){ try{ await window.storage.set(key, JSON.stringify(val), shared); }catch(e){ console.error('storage set failed', e); } }
+
+/* ================= STATE ================= */
+let state = {
+  authed: false,          // admin logged in? (session only, resets on reload)
+  tab: 'dashboard',
+  assets: [], categories: [], reports: [],
+  search: '', statusFilter: 'all', catFilter: 'all',
+  kkRoundStart: null,
+  modal: null,
+};
+
+const uid = (p='') => p + Date.now().toString(36).slice(-5) + Math.random().toString(36).slice(2,4);
+const todayStr = () => new Date().toISOString().slice(0,10);
+const STATUS_META = {
+  active:{label:'Đang sử dụng', cls:'active'},
+  broken:{label:'Hỏng', cls:'broken'},
+  repair:{label:'Đang sửa chữa', cls:'repair'},
+};
+
+/* ================= INIT / SEED ================= */
+async function init(){
+  let categories = await dbGet('categories:all', true);
+  if(!categories){
+    categories = [
+      {id:uid('C'), name:'Máy tính & CNTT'},
+      {id:uid('C'), name:'Thiết bị âm thanh - hình ảnh'},
+      {id:uid('C'), name:'Bàn ghế - nội thất'},
+      {id:uid('C'), name:'Thiết bị thí nghiệm'},
+    ];
+    await dbSet('categories:all', categories, true);
+  }
+  let assets = await dbGet('assets:all', true);
+  if(!assets){
+    const c = categories;
+    assets = [
+      {id:'TS-0001', code:'TS-0001', name:'Máy chiếu Epson EB-X06', categoryId:c[1].id, location:'Phòng B203', purchaseDate:'2023-08-10', status:'active', lastChecked:null},
+      {id:'TS-0012', code:'CNTT-0012', name:'Máy tính Dell OptiPlex 7090', categoryId:c[0].id, location:'Phòng máy 01', purchaseDate:'2022-05-14', status:'active', lastChecked:null},
+      {id:'TS-0041', code:'NT-0041', name:'Bàn giảng viên', categoryId:c[2].id, location:'Phòng A101', purchaseDate:'2021-02-01', status:'active', lastChecked:null},
+      {id:'TS-0008', code:'TN-0008', name:'Bộ thí nghiệm mạch điện', categoryId:c[3].id, location:'Kho CSVC', purchaseDate:'2021-09-01', status:'active', lastChecked:null},
+      {id:'TS-0028', code:'TS-0028', name:'Loa trợ giảng Takstar', categoryId:c[1].id, location:'Phòng A101', purchaseDate:'2023-01-20', status:'active', lastChecked:null},
+    ];
+    await dbSet('assets:all', assets, true);
+  }
+  let reports = await dbGet('reports:all', true);
+  if(!reports){ reports = []; await dbSet('reports:all', reports, true); }
+  let auth = await dbGet('auth:admin', true);
+  if(!auth){ auth = {username:'admin', password:'admin123'}; await dbSet('auth:admin', auth, true); }
+  let kk = await dbGet('kk:round', true);
+  state.kkRoundStart = kk ? kk.start : null;
+
+  state.categories = categories; state.assets = assets; state.reports = reports;
+  render();
+}
+async function saveAssets(){ await dbSet('assets:all', state.assets, true); }
+async function saveReports(){ await dbSet('reports:all', state.reports, true); }
+async function saveCategories(){ await dbSet('categories:all', state.categories, true); }
+
+function baseUrl(){ return location.href.split('#')[0].split('?')[0]; }
+function assetLink(assetId){ return `${baseUrl()}?asset=${encodeURIComponent(assetId)}`; }
+function catName(id){ const c = state.categories.find(x=>x.id===id); return c ? c.name : '—'; }
+function escHtml(s){ return (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ================= ICONS ================= */
+const ICONS = {
+  dashboard:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>',
+  assets:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>',
+  scan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7V4a1 1 0 011-1h3M21 7V4a1 1 0 00-1-1h-3M3 17v3a1 1 0 001 1h3M21 17v3a1 1 0 01-1 1h-3M7 12h10"/></svg>',
+  report:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01M10.3 3.86L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.86a2 2 0 00-3.4 0z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
+  tag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41L11 3.83A2 2 0 009.59 3.24L3 3v6.59a2 2 0 00.59 1.41l9.59 9.59a2 2 0 002.82 0l4.59-4.59a2 2 0 000-2.82z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>',
+};
+
+/* ================= RENDER SHELL ================= */
+function isAdmin(){ return state.authed; }
+
+function navItemsFor(){
+  const admin = [
+    {k:'dashboard', label:'Tổng quan', icon:ICONS.dashboard},
+    {k:'assets', label:'Tài sản', icon:ICONS.assets},
+    {k:'scan', label:'Quét QR', icon:ICONS.scan},
+    {k:'reports', label:'Báo hỏng', icon:ICONS.report},
+    {k:'inventory', label:'Kiểm kê', icon:ICONS.check},
+    {k:'categories', label:'Danh mục', icon:ICONS.tag},
+  ];
+  const guest = [
+    {k:'scan', label:'Quét QR', icon:ICONS.scan},
+    {k:'assets', label:'Tra cứu tài sản', icon:ICONS.assets},
+  ];
+  return isAdmin() ? admin : guest;
+}
+
+function render(){
+  const root = document.getElementById('app');
+  const nav = navItemsFor();
+  if(!nav.find(n=>n.k===state.tab)) state.tab = nav[0].k;
+  root.innerHTML = `
+  <div id="shell">
+    <aside id="sidebar">
+      <div class="logo">
+        <div class="mark"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="#fff" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="#fff" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="#fff" stroke-width="1.6"/><path d="M15 15h6v6h-6z" stroke="#fff" stroke-width="1.6"/></svg></div>
+        <h1>Quản lý thiết bị</h1>
+      </div>
+      <ul class="navlist">
+        ${nav.map(n=>`<button data-tab="${n.k}" class="${state.tab===n.k?'active':''}">${n.icon}<span>${n.label}</span></button>`).join('')}
+      </ul>
+      <div class="sidebar-foot">
+        ${isAdmin() ? `
+          <div class="who"><div class="av">BQ</div><div><p class="name">Ban quản lý</p><p class="role">Toàn quyền quản trị</p></div></div>
+          <button class="link-btn" id="logoutBtn">↩ Đăng xuất</button>
+        ` : `
+          <div class="who"><div class="av" style="background:#4B5170;">KH</div><div><p class="name">Khách</p><p class="role">Chỉ xem &amp; báo hỏng</p></div></div>
+          <button class="guest-login-btn" id="loginBtn">🔒 Đăng nhập Ban quản lý</button>
+        `}
+      </div>
+    </aside>
+    <main id="main">${renderPage()}</main>
+  </div>`;
+  attachNavEvents();
+  attachPageEvents();
+  renderMiniQrs();
+  if(state.modal) renderModal();
+}
+
+function attachNavEvents(){
+  document.querySelectorAll('.navlist button').forEach(b=>{
+    b.onclick = ()=>{ state.tab=b.dataset.tab; render(); };
+  });
+  const lb = document.getElementById('loginBtn'); if(lb) lb.onclick = ()=>{ state.modal={type:'login'}; render(); };
+  const ob = document.getElementById('logoutBtn'); if(ob) ob.onclick = ()=>{ state.authed=false; state.tab='scan'; render(); };
+}
+
+/* ================= PAGE ROUTER ================= */
+function renderPage(){
+  switch(state.tab){
+    case 'dashboard': return pageDashboard();
+    case 'assets': return pageAssets();
+    case 'scan': return pageScan();
+    case 'reports': return pageReports();
+    case 'inventory': return pageInventory();
+    case 'categories': return pageCategories();
+    default: return '';
+  }
+}
+
+/* ---------- DASHBOARD ---------- */
+function pageDashboard(){
+  const total = state.assets.length;
+  const active = state.assets.filter(a=>a.status==='active').length;
+  const repair = state.assets.filter(a=>a.status==='repair').length;
+  const openReports = state.reports.filter(r=>r.status!=='done').length;
+  const recentAssets = [...state.assets].slice(-5).reverse();
+  const recentReports = [...state.reports].sort((a,b)=>b.ts-a.ts).slice(0,5);
+  return `
+  <div class="pagehead">
+    <div><h2>Tổng quan</h2><p class="sub">Tình trạng tài sản và báo hỏng hiện tại.</p></div>
+    <div class="headactions">
+      <button class="btn secondary" id="goScan">Quét QR</button>
+      <button class="btn" id="goAdd">+ Thêm tài sản</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat-card"><div class="label">Tổng tài sản</div><div class="num">${total}</div></div>
+    <div class="stat-card"><div class="label">Đang sử dụng</div><div class="num">${active}</div></div>
+    <div class="stat-card"><div class="label">Đang sửa chữa</div><div class="num">${repair}</div></div>
+    <div class="stat-card ${openReports>0?'alert':''}"><div class="label">Báo hỏng chưa xử lý</div><div class="num">${openReports}</div></div>
+  </div>
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-head"><h3>Tài sản gần đây</h3><a data-goto="assets">Xem tất cả</a></div>
+      ${recentAssets.length? recentAssets.map(a=>`
+        <div class="row-item">
+          <div class="av">${escHtml(a.name[0])}</div>
+          <div class="info"><div class="n">${escHtml(a.name)}</div><div class="m">${escHtml(a.code)} · ${escHtml(a.location)}</div></div>
+          <span class="pill ${STATUS_META[a.status].cls}">${STATUS_META[a.status].label}</span>
+        </div>`).join('') : `<div class="empty-mini">Chưa có tài sản nào.</div>`}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Báo hỏng mới</h3><a data-goto="reports">Mở quy trình</a></div>
+      ${recentReports.length? recentReports.map(r=>{
+        const a = state.assets.find(x=>x.id===r.assetId);
+        return `<div class="row-item report-mini"><div class="dot"></div><div class="info"><div class="n">${escHtml(r.id.toUpperCase())} · ${escHtml(a?a.code:'?')}</div><div class="d">${escHtml(r.description)}</div></div><span class="${r.status==='new'?'badge-new':r.status==='processing'?'badge-processing':'badge-done'}">${r.status==='new'?'MỚI':r.status==='processing'?'ĐANG XỬ LÝ':'ĐÃ XONG'}</span></div>`;
+      }).join('') : `<div class="empty-mini">Chưa có báo hỏng nào.</div>`}
+    </div>
+  </div>`;
+}
+
+/* ---------- ASSETS ---------- */
+function filteredAssets(){
+  return state.assets.filter(a=>{
+    const okS = (a.name+a.code+a.location).toLowerCase().includes(state.search.toLowerCase());
+    const okSt = state.statusFilter==='all' || a.status===state.statusFilter;
+    const okC = state.catFilter==='all' || a.categoryId===state.catFilter;
+    return okS && okSt && okC;
+  });
+}
+function pageAssets(){
+  const list = filteredAssets();
+  return `
+  <div class="pagehead">
+    <div><h2>${isAdmin()?'Tài sản':'Tra cứu tài sản'}</h2><p class="sub">${isAdmin()?'Quản lý toàn bộ thiết bị, cơ sở vật chất.':'Xem thông tin thiết bị. Bấm vào thẻ để xem chi tiết hoặc báo hỏng.'}</p></div>
+    ${isAdmin()?`<div class="headactions"><button class="btn" id="addAssetBtn">+ Thêm tài sản</button></div>`:''}
+  </div>
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="Tìm theo tên, mã, vị trí..." value="${escHtml(state.search)}">
+    <select id="statusFilter">
+      <option value="all">Tất cả trạng thái</option>
+      <option value="active" ${state.statusFilter==='active'?'selected':''}>Đang sử dụng</option>
+      <option value="repair" ${state.statusFilter==='repair'?'selected':''}>Đang sửa chữa</option>
+      <option value="broken" ${state.statusFilter==='broken'?'selected':''}>Hỏng</option>
+    </select>
+    <select id="catFilter">
+      <option value="all">Tất cả danh mục</option>
+      ${state.categories.map(c=>`<option value="${c.id}" ${state.catFilter===c.id?'selected':''}>${escHtml(c.name)}</option>`).join('')}
+    </select>
+  </div>
+  ${list.length===0? `<div class="empty"><h3>Không có thiết bị phù hợp</h3><p>Thử đổi bộ lọc hoặc từ khoá tìm kiếm.</p></div>` : `
+  <div class="grid">
+    ${list.map(a=>`
+      <div class="tcard" data-id="${a.id}">
+        <div class="tcard-top"><span class="tag-id">${escHtml(a.code)}</span><span class="pill ${STATUS_META[a.status].cls}">${STATUS_META[a.status].label}</span></div>
+        <h3>${escHtml(a.name)}</h3>
+        <p class="loc">📍 ${escHtml(a.location)}</p>
+        <div class="tcard-foot"><span class="cat">${escHtml(catName(a.categoryId))}</span><div class="mini-qr" id="mqr-${a.id}"></div></div>
+      </div>`).join('')}
+  </div>`}`;
+}
+
+/* ---------- SCAN ---------- */
+function pageScan(){
+  return `
+  <div class="pagehead"><div><h2>Quét QR</h2><p class="sub">Chọn thiết bị để mô phỏng quét mã bằng điện thoại, hoặc quét trực tiếp mã dán trên tài sản.</p></div></div>
+  <div class="panel" style="max-width:480px;">
+    <div class="hint">Khi triển khai thực tế: người dùng dùng camera điện thoại quét QR dán trên thiết bị, hệ thống tự mở đúng trang chi tiết thiết bị đó.</div>
+    <div class="field"><label>Chọn thiết bị để mô phỏng</label>
+      <select id="scanPick">${state.assets.map(a=>`<option value="${a.id}">${escHtml(a.code)} — ${escHtml(a.name)}</option>`).join('')}</select>
+    </div>
+    <button class="btn" id="goScanBtn" style="width:100%;">Xem thiết bị</button>
+  </div>`;
+}
+
+/* ---------- REPORTS (admin) ---------- */
+function pageReports(){
+  const list = [...state.reports].sort((a,b)=>b.ts-a.ts);
+  return `
+  <div class="pagehead"><div><h2>Báo hỏng</h2><p class="sub">Toàn bộ báo cáo sự cố từ giáo viên, sinh viên.</p></div></div>
+  ${list.length===0? `<div class="empty"><h3>Chưa có báo cáo nào</h3><p>Khi ai đó quét QR và gửi báo hỏng, nó sẽ hiện tại đây.</p></div>` : `
+  <div class="grid" style="grid-template-columns:1fr;">
+    ${list.map(r=>{
+      const a = state.assets.find(x=>x.id===r.assetId);
+      return `<div class="tcard" style="cursor:default;">
+        <div class="tcard-top">
+          <span class="tag-id">${escHtml(r.id.toUpperCase())} — ${a?escHtml(a.code)+' · '+escHtml(a.name):'(đã xoá)'}</span>
+          <span class="${r.status==='new'?'badge-new':r.status==='processing'?'badge-processing':'badge-done'}">${r.status==='new'?'MỚI':r.status==='processing'?'ĐANG XỬ LÝ':'ĐÃ XONG'}</span>
+        </div>
+        <p style="font-size:13.5px;margin:10px 0 4px;">${escHtml(r.description)}</p>
+        <p style="font-size:11.5px;font-family:var(--mono);color:var(--ink-soft);margin:0 0 8px;">Người báo: ${escHtml(r.reporter||'Ẩn danh')} · ${new Date(r.ts).toLocaleString('vi-VN')}</p>
+        ${r.photo?`<img src="${r.photo}" style="max-width:220px;border-radius:9px;display:block;margin-bottom:10px;">`:''}
+        <div style="display:flex;gap:8px;">
+          ${r.status!=='processing'?`<button class="btn secondary sm" data-status="${r.id}:processing">Đang xử lý</button>`:''}
+          ${r.status!=='done'?`<button class="btn sm" data-status="${r.id}:done">✓ Đã xử lý xong</button>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`}`;
+}
+
+/* ---------- INVENTORY (admin) ---------- */
+function pageInventory(){
+  const checkedCount = state.assets.filter(a=> a.lastChecked && state.kkRoundStart && a.lastChecked>=state.kkRoundStart).length;
+  return `
+  <div class="pagehead">
+    <div><h2>Kiểm kê</h2><p class="sub">${state.kkRoundStart? `Đợt kiểm kê bắt đầu ${state.kkRoundStart} · Đã kiểm kê ${checkedCount}/${state.assets.length}` : 'Chưa có đợt kiểm kê nào đang diễn ra.'}</p></div>
+    <div class="headactions"><button class="btn" id="newRoundBtn">${state.kkRoundStart?'Bắt đầu đợt mới':'Bắt đầu kiểm kê'}</button></div>
+  </div>
+  ${state.assets.map(a=>{
+    const checked = a.lastChecked && state.kkRoundStart && a.lastChecked>=state.kkRoundStart;
+    return `<div class="kk-row ${checked?'checked':''}">
+      <div class="cbwrap"><input type="checkbox" data-kk="${a.id}" ${checked?'checked':''} ${state.kkRoundStart?'':'disabled'}></div>
+      <div class="info"><div class="n">${escHtml(a.name)}</div><div class="m">${escHtml(a.code)} · ${escHtml(a.location)}</div></div>
+      <span class="pill ${STATUS_META[a.status].cls}">${STATUS_META[a.status].label}</span>
+      <span class="stamp">${a.lastChecked?('Kiểm gần nhất: '+a.lastChecked):'Chưa kiểm'}</span>
+    </div>`;
+  }).join('')}`;
+}
+
+/* ---------- CATEGORIES (admin) ---------- */
+function pageCategories(){
+  return `
+  <div class="pagehead"><div><h2>Danh mục</h2><p class="sub">Nhóm thiết bị theo loại để dễ quản lý và lọc.</p></div></div>
+  <div class="panel" style="max-width:560px;">
+    <div class="field"><label>Thêm danh mục mới</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="newCatInput" placeholder="VD: Thiết bị thể thao">
+        <button class="btn" id="addCatBtn">Thêm</button>
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      ${state.categories.map(c=>{
+        const n = state.assets.filter(a=>a.categoryId===c.id).length;
+        return `<span class="catchip">${escHtml(c.name)} <span style="color:var(--ink-soft);">(${n})</span> <button data-delcat="${c.id}">×</button></span>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+/* ================= PAGE EVENTS ================= */
+function attachPageEvents(){
+  document.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.goto; render(); });
+  const goScan = document.getElementById('goScan'); if(goScan) goScan.onclick = ()=>{ state.tab='scan'; render(); };
+  const goAdd = document.getElementById('goAdd'); if(goAdd) goAdd.onclick = ()=>{ if(!isAdmin()){ state.modal={type:'login'}; } else { state.modal={type:'add'}; } render(); };
+
+  if(state.tab==='assets'){
+    const s = document.getElementById('searchInput');
+    if(s){ s.oninput=(e)=>{ state.search=e.target.value; render(); const el=document.getElementById('searchInput'); el.focus(); el.setSelectionRange(state.search.length,state.search.length); }; }
+    const sf = document.getElementById('statusFilter'); if(sf) sf.onchange=(e)=>{ state.statusFilter=e.target.value; render(); };
+    const cf = document.getElementById('catFilter'); if(cf) cf.onchange=(e)=>{ state.catFilter=e.target.value; render(); };
+    const ab = document.getElementById('addAssetBtn'); if(ab) ab.onclick=()=>{ state.modal={type:'add'}; render(); };
+    document.querySelectorAll('.tcard[data-id]').forEach(c=>{
+      c.onclick = ()=>{ const a = state.assets.find(x=>x.id===c.dataset.id); state.modal = {type: isAdmin()?'detail':'view', data:a}; render(); };
+    });
+  }
+  if(state.tab==='scan'){
+    const gb = document.getElementById('goScanBtn');
+    if(gb) gb.onclick = ()=>{ const id = document.getElementById('scanPick').value; const a = state.assets.find(x=>x.id===id); state.modal={type: isAdmin()?'detail':'view', data:a}; render(); };
+  }
+  if(state.tab==='reports'){
+    document.querySelectorAll('[data-status]').forEach(b=>{
+      b.onclick = async ()=>{ const [id,st] = b.dataset.status.split(':'); const r = state.reports.find(x=>x.id===id); r.status=st; await saveReports(); render(); };
+    });
+  }
+  if(state.tab==='inventory'){
+    const nb = document.getElementById('newRoundBtn');
+    if(nb) nb.onclick = async ()=>{ state.kkRoundStart = todayStr(); await dbSet('kk:round', {start:state.kkRoundStart}, true); render(); };
+    document.querySelectorAll('[data-kk]').forEach(cb=>{
+      cb.onchange = async ()=>{ const a = state.assets.find(x=>x.id===cb.dataset.kk); a.lastChecked = cb.checked ? todayStr() : null; await saveAssets(); render(); };
+    });
+  }
+  if(state.tab==='categories'){
+    const ac = document.getElementById('addCatBtn');
+    if(ac) ac.onclick = async ()=>{
+      const v = document.getElementById('newCatInput').value.trim();
+      if(!v) return;
+      state.categories.push({id:uid('C'), name:v});
+      await saveCategories(); render();
+    };
+    document.querySelectorAll('[data-delcat]').forEach(b=>{
+      b.onclick = async ()=>{
+        const inUse = state.assets.some(a=>a.categoryId===b.dataset.delcat);
+        if(inUse){ alert('Không thể xoá danh mục đang có thiết bị sử dụng.'); return; }
+        state.categories = state.categories.filter(c=>c.id!==b.dataset.delcat);
+        await saveCategories(); render();
+      };
+    });
+  }
+}
+
+function renderMiniQrs(){
+  if(state.tab!=='assets') return;
+  filteredAssets().forEach(a=>{
+    const el = document.getElementById('mqr-'+a.id);
+    if(el && !el.dataset.done){ el.dataset.done='1'; new QRCode(el, {text: assetLink(a.id), width:56, height:56, correctLevel: QRCode.CorrectLevel.M}); }
+  });
+}
+
+/* ================= MODALS ================= */
+function renderModal(){
+  const m = state.modal; let html='';
+  if(m.type==='login') html = loginModal();
+  else if(m.type==='add'||m.type==='edit') html = assetFormModal(m);
+  else if(m.type==='detail') html = detailModal(m.data, true);
+  else if(m.type==='view') html = detailModal(m.data, false);
+  else if(m.type==='report') html = reportFormModal(m.data);
+  const wrap = document.createElement('div'); wrap.className='overlay'; wrap.innerHTML = html;
+  wrap.onclick = (e)=>{ if(e.target===wrap){ state.modal=null; render(); } };
+  document.getElementById('app').appendChild(wrap);
+  bindModalEvents(m);
+}
+
+function loginModal(){
+  return `<div class="modal">
+    <button class="close-x" data-close>×</button>
+    <h2>Đăng nhập Ban quản lý</h2>
+    <p class="sub">Chỉ Ban quản lý mới có quyền thêm, sửa, xoá tài sản.</p>
+    ${state.loginError? `<div class="err-msg">${escHtml(state.loginError)}</div>`:''}
+    <div class="field"><label>Tên đăng nhập</label><input type="text" id="lg-user" placeholder="admin"></div>
+    <div class="field"><label>Mật khẩu</label><input type="password" id="lg-pass" placeholder="••••••••"></div>
+    <div class="hint">Tài khoản demo: <b>admin</b> / <b>admin123</b></div>
+    <div class="modal-actions"><button class="btn secondary" data-close>Huỷ</button><button class="btn" id="doLoginBtn">Đăng nhập</button></div>
+  </div>`;
+}
+
+function assetFormModal(m){
+  const a = m.data || {id: uid('TS-'), code:'', name:'', categoryId: state.categories[0]?.id||'', location:'', purchaseDate: todayStr(), status:'active'};
+  return `<div class="modal">
+    <button class="close-x" data-close>×</button>
+    <h2>${m.type==='add'?'Thêm tài sản mới':'Sửa thông tin tài sản'}</h2>
+    <p class="sub">Mã QR tự động sinh theo mã tài sản</p>
+    <div class="field"><label>Mã tài sản</label><input type="text" id="f-code" value="${escHtml(a.code)}" placeholder="VD: CNTT-0012"></div>
+    <div class="field"><label>Tên thiết bị</label><input type="text" id="f-name" value="${escHtml(a.name)}" placeholder="VD: Máy chiếu Epson EB-X06"></div>
+    <div class="field"><label>Danh mục</label><select id="f-cat">${state.categories.map(c=>`<option value="${c.id}" ${a.categoryId===c.id?'selected':''}>${escHtml(c.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>Vị trí</label><input type="text" id="f-location" value="${escHtml(a.location)}" placeholder="VD: Phòng A203"></div>
+    <div class="field"><label>Ngày mua</label><input type="date" id="f-date" value="${a.purchaseDate}"></div>
+    <div class="field"><label>Trạng thái</label><select id="f-status">
+      <option value="active" ${a.status==='active'?'selected':''}>Đang sử dụng</option>
+      <option value="repair" ${a.status==='repair'?'selected':''}>Đang sửa chữa</option>
+      <option value="broken" ${a.status==='broken'?'selected':''}>Hỏng</option>
+    </select></div>
+    <div class="modal-actions">
+      ${m.type==='edit'?`<button class="btn danger" id="deleteBtn" style="margin-right:auto;">Xoá</button>`:''}
+      <button class="btn secondary" data-close>Huỷ</button><button class="btn" id="saveBtn">Lưu</button>
+    </div>
+  </div>`;
+}
+
+function detailModal(a, admin){
+  const related = state.reports.filter(r=>r.assetId===a.id).sort((x,y)=>y.ts-x.ts);
+  return `<div class="modal">
+    <button class="close-x" data-close>×</button>
+    <h2>${escHtml(a.name)}</h2><p class="sub">${escHtml(a.code)}</p>
+    <div class="detail-qr-wrap"><div class="qr-box" id="fullqr"></div><div class="link">${assetLink(a.id)}</div></div>
+    <dl class="kv">
+      <dt>Danh mục</dt><dd>${escHtml(catName(a.categoryId))}</dd>
+      <dt>Vị trí</dt><dd>${escHtml(a.location)}</dd>
+      <dt>Ngày mua</dt><dd>${a.purchaseDate}</dd>
+      <dt>Trạng thái</dt><dd><span class="pill ${STATUS_META[a.status].cls}">${STATUS_META[a.status].label}</span></dd>
+    </dl>
+    ${admin? `<div class="modal-actions" style="justify-content:flex-start;margin-bottom:18px;">
+        <button class="btn secondary" id="editBtn">Sửa thông tin</button><button class="btn secondary" id="printBtn">In mã QR</button>
+      </div>` : `<div class="modal-actions" style="justify-content:flex-start;margin-bottom:18px;">
+        <button class="btn" id="reportBtn">🚩 Báo hỏng thiết bị này</button>
+      </div>`}
+    ${related.length>0? `<p class="sub" style="margin-top:8px;">LỊCH SỬ BÁO HỎNG (${related.length})</p>
+      ${related.map(r=>`<div class="report-item"><div class="meta">${new Date(r.ts).toLocaleString('vi-VN')} · ${escHtml(r.reporter||'Ẩn danh')} · <span class="${r.status==='new'?'badge-new':r.status==='processing'?'badge-processing':'badge-done'}">${r.status==='new'?'MỚI':r.status==='processing'?'ĐANG XỬ LÝ':'ĐÃ XONG'}</span></div>${escHtml(r.description)}${r.photo?`<img src="${r.photo}">`:''}</div>`).join('')}` : ''}
+  </div>`;
+}
+
+function reportFormModal(a){
+  return `<div class="modal">
+    <button class="close-x" data-close>×</button>
+    <h2>Báo cáo hỏng hóc</h2><p class="sub">${escHtml(a.code)} — ${escHtml(a.name)}</p>
+    <div class="field"><label>Họ tên người báo cáo</label><input type="text" id="r-name" placeholder="VD: Nguyễn Văn A"></div>
+    <div class="field"><label>Mô tả sự cố</label><textarea id="r-desc" placeholder="Mô tả hiện tượng hỏng hóc..."></textarea></div>
+    <div class="field"><label>Ảnh chụp (không bắt buộc)</label>
+      <div class="file-drop" id="fileDrop"><span id="fileDropLabel">Bấm để chọn ảnh</span><input type="file" id="r-photo" accept="image/*" style="display:none;"></div>
+    </div>
+    <div class="modal-actions"><button class="btn secondary" data-close>Huỷ</button><button class="btn" id="submitReportBtn">Gửi báo cáo</button></div>
+  </div>`;
+}
+
+function bindModalEvents(m){
+  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{ state.modal=null; state.loginError=null; render(); });
+
+  if(m.type==='login'){
+    document.getElementById('doLoginBtn').onclick = async ()=>{
+      const u = document.getElementById('lg-user').value.trim();
+      const p = document.getElementById('lg-pass').value;
+      const auth = await dbGet('auth:admin', true);
+      if(auth && u===auth.username && p===auth.password){
+        state.authed=true; state.loginError=null; state.modal=null; state.tab='dashboard'; render();
+      } else {
+        state.loginError = 'Sai tên đăng nhập hoặc mật khẩu.'; render();
+      }
+    };
+  }
+
+  if(m.type==='add'||m.type==='edit'){
+    document.getElementById('saveBtn').onclick = async ()=>{
+      const code = document.getElementById('f-code').value.trim();
+      const name = document.getElementById('f-name').value.trim();
+      const categoryId = document.getElementById('f-cat').value;
+      const location = document.getElementById('f-location').value.trim();
+      const purchaseDate = document.getElementById('f-date').value;
+      const status = document.getElementById('f-status').value;
+      if(!code || !name || !location){ alert('Vui lòng nhập đầy đủ mã, tên và vị trí thiết bị.'); return; }
+      if(m.type==='add'){ state.assets.push({id: uid('TS-'), code, name, categoryId, location, purchaseDate, status, lastChecked:null}); }
+      else { Object.assign(m.data, {code, name, categoryId, location, purchaseDate, status}); }
+      await saveAssets(); state.modal=null; render();
+    };
+    const del = document.getElementById('deleteBtn');
+    if(del) del.onclick = async ()=>{
+      if(confirm('Xoá thiết bị này? Hành động không thể hoàn tác.')){
+        state.assets = state.assets.filter(x=>x.id!==m.data.id); await saveAssets(); state.modal=null; render();
+      }
+    };
+  }
+
+  if(m.type==='detail'||m.type==='view'){
+    const qrEl = document.getElementById('fullqr');
+    if(qrEl) new QRCode(qrEl, {text: assetLink(m.data.id), width:160, height:160, correctLevel: QRCode.CorrectLevel.M});
+    const eb = document.getElementById('editBtn'); if(eb) eb.onclick=()=>{ state.modal={type:'edit', data:m.data}; render(); };
+    const pb = document.getElementById('printBtn'); if(pb) pb.onclick=()=>{
+      const w = window.open('', '_blank');
+      w.document.write(`<html><head><title>In tem QR - ${escHtml(m.data.code)}</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+        <style>body{font-family:sans-serif;text-align:center;padding:30px;} .tag{display:inline-block;border:1px dashed #999;padding:16px 22px;border-radius:8px;}</style></head><body>
+        <div class="tag"><div id="p"></div><h3 style="margin:10px 0 2px;">${escHtml(m.data.code)}</h3><p style="margin:0;font-size:13px;">${escHtml(m.data.name)}</p><p style="margin:2px 0 0;font-size:11px;color:#666;">${escHtml(m.data.location)}</p></div>
+        <script>window.onload=function(){ new QRCode(document.getElementById('p'), {text:"${assetLink(m.data.id)}", width:180, height:180}); setTimeout(function(){window.print();},300); };<\/script>
+        </body></html>`);
+      w.document.close();
+    };
+    const rb = document.getElementById('reportBtn'); if(rb) rb.onclick=()=>{ state.modal={type:'report', data:m.data}; render(); };
+  }
+
+  if(m.type==='report'){
+    let photoData = null;
+    const drop = document.getElementById('fileDrop'); const input = document.getElementById('r-photo');
+    drop.onclick = ()=>input.click();
+    input.onchange = ()=>{
+      const file = input.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{ photoData = reader.result; document.getElementById('fileDropLabel').innerHTML = `Đã chọn: ${escHtml(file.name)}<br><img src="${photoData}">`; };
+      reader.readAsDataURL(file);
+    };
+    document.getElementById('submitReportBtn').onclick = async ()=>{
+      const desc = document.getElementById('r-desc').value.trim();
+      if(!desc){ alert('Vui lòng mô tả sự cố.'); return; }
+      const reporter = document.getElementById('r-name').value.trim();
+      state.reports.push({id: uid('bh-'), assetId: m.data.id, description: desc, reporter, photo: photoData, ts: Date.now(), status:'new'});
+      await saveReports();
+      alert('Đã gửi báo cáo hỏng hóc. Cảm ơn bạn!');
+      state.modal=null; render();
+    };
+  }
+}
+
+/* ================= DEEP LINK ================= */
+function checkDeepLink(){
+  const params = new URLSearchParams(location.search);
+  const assetId = params.get('asset');
+  if(assetId){ const a = state.assets.find(x=>x.id===assetId); if(a){ state.tab='scan'; state.modal={type: isAdmin()?'detail':'view', data:a}; } }
+}
+
+init().then(()=>{ checkDeepLink(); render(); });
+</script>
+</body>
+</html>
